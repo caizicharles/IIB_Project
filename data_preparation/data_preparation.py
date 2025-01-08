@@ -3,9 +3,7 @@ import os.path as osp
 import random
 import numpy as np
 from numpy.core.numeric import full
-
 from tqdm import tqdm
-
 import wfdb
 import matplotlib.pyplot as plt
 import torch
