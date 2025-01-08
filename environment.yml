@@ -1,0 +1,25 @@
+name: IIB_Project
+channels:
+  - nvidia
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pytorch=2.0.1
+  - pytorch-cuda=11.8
+  - cudatoolkit=11.8
+  - matplotlib
+  - numpy
+  - scipy
+  - pandas
+  - pytables
+  - scikit-learn
+  - scikit-image
+  - wfdb
+  - pip
+  - pip:
+      - pyhealth
+      - PyYaml
+      - mlflow
+      - tqdm

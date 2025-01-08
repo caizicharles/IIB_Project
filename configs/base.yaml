@@ -1,1 +1,57 @@
+seed: 0
+task: prediction
+dataset: Trial
+train_batch_size: 512
+val_batch_size: 512
+test_batch_size: 512
+max_epoch: 100
+val_freq: 1
+logging_freq: 2
+early_stopping_epoch: 30
+early_stopping_metric: Predictivity
+ecg_length: 6080
+spectrogram_height: 256
+spectrogram_width: 256
 
+model:
+  name: TimeCNN
+  mode: train
+  args:
+hidden_dim: 16
+out_dim: 1
+conv_kernel_size: 4
+conv_stride: 1
+pool_kernel_size: 16
+pool_stride: 1
+padding: valid
+dropout: 0.1
+
+optimizer:
+  name: Adam
+  args:
+lr: 0.005
+weight_decay: 0.
+
+scheduler:
+  name: ExpLR
+  args:
+gamma: 0.995
+
+criterion:
+  binary_entropy:
+    reduction: mean
+
+val_metrics:
+  Predictivity:
+    args: None
+
+test_metrics:
+  Accuracy:
+    args: None
+  Predictivity:
+    args: None
+  Negative_Predictivity:
+    args: None
+
+processed_data_path: /content/drive/MyDrive/IIB_Project/data/processed
+log_path: /content/drive/MyDrive/IIB_Project/logs

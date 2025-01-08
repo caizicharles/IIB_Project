@@ -1,0 +1,16 @@
+seed: 0
+task: data_preparation
+dataset: Trial
+train_proportion: 0.8
+val_proportion: 0.1
+test_proportion: 0.1
+
+filtering:
+  args:
+    highcutoff_freq: 30
+    lowcutoff_freq: 3
+    downsample_freq: 200
+    normalize: True
+
+raw_data_path: /content/drive/MyDrive/IIB_Project/data/raw
+processed_data_path: /content/drive/MyDrive/IIB_Project/data/processed
