@@ -11,5 +11,5 @@ class BaseDataset(Dataset):
 
     def __getitem__(self, index):
       return {'ecg': torch.tensor(self.data[index]['ecg']),
-              'spectrogram': torch.tensor(self.data[index]['spectrogram']),
+              # 'spectrogram': torch.tensor(self.data[index]['spectrogram']),
               'label': torch.tensor([self.data[index]['label']])}

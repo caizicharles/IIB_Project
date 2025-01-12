@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.metrics import accuracy_score, confusion_matrix, average_precision_score, roc_auc_score
+from sklearn.metrics import f1_score, accuracy_score, confusion_matrix, average_precision_score, roc_auc_score
 
 
 class MetricBase():
@@ -118,6 +118,21 @@ class AUPRC(MetricBase):
         logger.info(f'{self.NAME}: {score:.4f}')
 
 
+class F1(MetricBase):
+
+    def __init__(self, **kwargs):
+        self.NAME = 'F1'
+
+    def calculate(self, probability, target):
+        probability = np.squeeze(probability, axis=-1)
+        target = np.squeeze(target, axis=-1)
+        probability = (probability >= 0.5).astype(int)
+        return f1_score(target, probability, average="macro", zero_division=1)
+
+    def log(self, score, logger):
+        logger.info(f'{self.NAME}: {score:.4f}')
+
+
 METRICS = {
     'Accuracy': Accuracy,
     'Sensitivity': Sensitivity,
@@ -125,5 +140,6 @@ METRICS = {
     'Negative_Predictivity': Negative_Predictivity,
     'Specificity': Specificity,
     'AUROC': AUROC,
-    'AUPRC': AUPRC
+    'AUPRC': AUPRC,
+    'F1': F1
 }

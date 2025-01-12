@@ -19,7 +19,17 @@ def get_args():
 
     model_hyp_search_args = {
         # Base
-        
+        'hidden_dim': 16,
+        'out_dim': 1,
+        'conv_kernel_size': 4,
+        'conv_stride': 1,
+        'pool_kernel_size': 16,
+        'pool_stride': 1,
+        'padding': 'valid',
+        'freq_encoder_hidden_sizes': [16, 16],
+        'joint_head_hidden_sizes': [16, 16],
+        'act_fn': 'relu',
+        'dropout': 0.1
     }
 
     optimizer_hyp_search_args = {
@@ -52,7 +62,7 @@ def get_args():
 
     args = parser.parse_args(remaining)
 
-    if args.task != 'data_preparation' and args.checkpoint == '':
+    if args.task != 'data_preparation' and args.task != 'exploration' and args.checkpoint == '':
         for hyp in optimizer_hyp_search_args.keys():
             value = getattr(args, hyp, None)
             if value is not None:

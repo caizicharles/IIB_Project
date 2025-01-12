@@ -2,7 +2,6 @@ import os
 import os.path as osp
 import random
 import numpy as np
-from numpy.core.numeric import full
 from tqdm import tqdm
 import wfdb
 import matplotlib.pyplot as plt
@@ -15,6 +14,7 @@ from copy import deepcopy
 import matplotlib.pyplot as plt
 from PIL import Image
 import io
+import neurokit2 as nk
 
 from utils.args import get_args
 from utils.utils import *
@@ -35,7 +35,6 @@ RECORD_TEMPLATE = {'patient_id': None,
 
 
 def seed_everything(seed: int):
-
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -90,6 +89,7 @@ def load_data(raw_data_path: str, dataset_name: str, save: bool = False, save_pa
         #   TN += 1
 
       rec_idx = int(anon['measNo']) - 1
+      assert rec_idx >= 0
       raw_data[patient_id]['rec_idx'].append(rec_idx)
       raw_data[patient_id]['labels'].append(label)
 
@@ -240,6 +240,29 @@ def construct_data(data, save: bool = False, save_path: str = None):
     # spectrogram = np.array(Image.open(buf).convert('L'))
 
     return spectrogram
+  
+  def get_features(signal, sampling_freq):
+    
+    _, rpeaks = nk.ecg_peaks(signal, sampling_rate=sampling_freq, correct_artifacts=True, show=True)
+    r_features = np.zeros(len(signal))
+    r_features[rpeaks['ECG_R_Peaks']] = 1
+
+    quality = nk.ecg_quality(signal, sampling_rate=sampling_freq)
+
+    _, waves = nk.ecg_delineate(signal, rpeaks, sampling_rate=sampling_freq)
+    wave_features = np.zeros((len(waves.keys()), len(signal)))
+    for idx, feat_indices in enumerate(waves):
+      wave_features[idx, feat_indices] = 1
+
+    info = nk.signal_findpeaks(signal)
+    rate = nk.signal_rate(peaks=info["Peaks"],
+                          desired_length=len(signal),
+                          interpolation_method="monotone_cubic")
+    
+    print(r_features.shape, wave_features.shape, rate.shape)
+    exit()
+    features = np.stack((r_features, wave_features, rate))
+    return features
 
   for patient_id, info in tqdm(data.items(), desc='Constructing data'):
     signals = info['ecg_for_spectrogram']
@@ -247,7 +270,7 @@ def construct_data(data, save: bool = False, save_path: str = None):
 
     for ecg in signals:
       spectrogram = ecg_to_spectrogram(ecg, sampling_freq)
-      data[patient_id]['spectrogram'].append(spectrogram)
+      # data[patient_id]['spectrogram'].append(spectrogram)
 
   if save:
     save_with_pickle(data, save_path, 'constructed_data.pickle')
@@ -282,11 +305,12 @@ def split_data(data, split_ratio=(0.8, 0.1, 0.1), split_mode='record', save: boo
     for patient_id, info in data.items():
       sampling_frq = info['sampling_freq']
 
-      for ecg, spectrogram, label in zip(info['ecg'], info['spectrogram'], info['labels']):
+      for ecg, label in zip(info['ecg'], info['labels']):
+      # for ecg, spectrogram, label in zip(info['ecg'], info['spectrogram'], info['labels']):
         record = deepcopy(RECORD_TEMPLATE)
         record['patient_id'] = patient_id
         record['ecg'] = ecg
-        record['spectrogram'] = spectrogram
+        # record['spectrogram'] = spectrogram
         record['label'] = label
 
         full_data.append(record)
@@ -321,25 +345,24 @@ def run(args):
   val_data_path = osp.join(args.processed_data_path, args.dataset, 'val_data.pickle')
   test_data_path = osp.join(args.processed_data_path, args.dataset, 'test_data.pickle')
   
-  # if not osp.exists(raw_data_path):
-  #   raw_data = load_data(raw_data_path=args.raw_data_path,
-  #                        dataset_name=args.dataset,
-  #                        save=True,
-  #                        save_path=save_path)
-  # else:
-  #   raw_data = read_pickle_file(save_path, 'raw_data.pickle')
+  if not osp.exists(raw_data_path):
+    raw_data = load_data(raw_data_path=args.raw_data_path,
+                         dataset_name=args.dataset,
+                         save=True,
+                         save_path=save_path)
+  else:
+    raw_data = read_pickle_file(save_path, 'raw_data.pickle')
   print('load_data complete')
 
   if not osp.exists(filtered_data_path):
-    pass
-    # filtered_data = filter_data(raw_data, filtering_args=args.filtering['args'], save=True,
-    #                      save_path=save_path)
+    filtered_data = filter_data(raw_data, filtering_args=args.filtering['args'], save=False,
+                         save_path=save_path)
   else:
     filtered_data = read_pickle_file(save_path, 'filtered_data.pickle')
   print('filter_data complete')
 
   if not osp.exists(constructed_data_path):
-    constructed_data = construct_data(filtered_data, save=True,
+    constructed_data = construct_data(filtered_data, save=False,
                          save_path=save_path)
   else:
     constructed_data = read_pickle_file(save_path, 'constructed_data.pickle')

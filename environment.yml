@@ -6,9 +6,8 @@ channels:
   - defaults
 dependencies:
   - python=3.11
-  - pytorch=2.0.1
-  - pytorch-cuda=11.8
-  - cudatoolkit=11.8
+  - pytorch
+  - pytorch-cuda=12.4
   - matplotlib
   - numpy
   - scipy
@@ -20,6 +19,7 @@ dependencies:
   - pip
   - pip:
       - pyhealth
+      - neurokit2
       - PyYaml
       - mlflow
       - tqdm
