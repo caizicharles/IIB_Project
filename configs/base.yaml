@@ -1,35 +1,42 @@
 seed: 0
 task: prediction
 dataset: Trial
-train_batch_size: 512
-val_batch_size: 512
-test_batch_size: 512
+save_test: False
+save_params: False
+
+train_batch_size: 1024
+val_batch_size: 1024
+test_batch_size: 1024
 max_epoch: 100
 val_freq: 1
-logging_freq: 2
+logging_freq: 20
 early_stopping_epoch: 30
-early_stopping_metric: Predictivity
+early_stopping_metric: AUROC
+bootstrap_num: 100
 ecg_length: 6080
 spectrogram_height: 256
 spectrogram_width: 256
 
 model:
-  name: TimeCNN
+  name: BaseModel
   mode: train
   args:
 hidden_dim: 16
 out_dim: 1
 conv_kernel_size: 4
 conv_stride: 1
-pool_kernel_size: 16
+pool_kernel_size: 4
 pool_stride: 1
 padding: valid
+freq_encoder_hidden_sizes: [64, 64]
+joint_head_hidden_sizes: [16, 16]
+act_fn: relu
 dropout: 0.1
 
 optimizer:
   name: Adam
   args:
-lr: 0.005
+lr: 0.0005
 weight_decay: 0.
 
 scheduler:
@@ -42,7 +49,17 @@ criterion:
     reduction: mean
 
 val_metrics:
+  Accuracy:
+    args: None
   Predictivity:
+    args: None
+  Negative_Predictivity:
+    args: None
+  AUROC:
+    args: None
+  AUPRC:
+    args: None
+  F1:
     args: None
 
 test_metrics:
@@ -52,6 +69,12 @@ test_metrics:
     args: None
   Negative_Predictivity:
     args: None
+  AUROC:
+    args: None
+  AUPRC:
+    args: None
+  F1:
+    args: None
 
-processed_data_path: /content/drive/MyDrive/IIB_Project/data/processed
-log_path: /content/drive/MyDrive/IIB_Project/logs
+processed_data_path: C:\Users\caizi\Documents\GitHub\IIB_Project\data\processed
+log_data_path: C:\Users\caizi\Documents\GitHub\IIB_Project\logs
