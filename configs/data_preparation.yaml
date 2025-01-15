@@ -12,5 +12,5 @@ filtering:
     downsample_freq: 200
     normalize: True
 
-raw_data_path: /content/drive/MyDrive/IIB_Project/data/raw
-processed_data_path: /content/drive/MyDrive/IIB_Project/data/processed
+raw_data_path: C:\Users\ZC\Documents\GitHub\SAFER
+processed_data_path: C:\Users\ZC\Documents\GitHub\IIB_Project\data\processed

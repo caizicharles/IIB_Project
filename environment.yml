@@ -18,8 +18,10 @@ dependencies:
   - wfdb
   - pip
   - pip:
-      - pyhealth
-      - neurokit2
-      - PyYaml
-      - mlflow
-      - tqdm
+    - pyhealth
+    - neurokit2
+    - imbalanced-learn
+    - PyYaml
+    - mlflow
+    - tqdm
+    - gpustat

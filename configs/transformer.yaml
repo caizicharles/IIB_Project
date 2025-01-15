@@ -14,19 +14,18 @@ early_stopping_epoch: 30
 early_stopping_metric: AUROC
 bootstrap_num: 100
 ecg_length: 6080
-features_num: 13
+features_num: 12
 spectrogram_height: 256
 spectrogram_width: 256
 
 model:
-  name: BaseModel
+  name: Transformer
   mode: train
   args:
-hidden_dim: 32
-out_dim: 1
-layer_num: 4
-joint_head_hidden_sizes: [16, 16]
-act_fn: tanh
+hidden_dim: 16
+ff_dim: 512
+head_num: 1
+encoder_depth: 1
 dropout: 0.1
 
 optimizer:
@@ -51,8 +50,6 @@ val_metrics:
     args: None
   Negative_Predictivity:
     args: None
-  Recall:
-    args: None
   AUROC:
     args: None
   AUPRC:
@@ -66,8 +63,6 @@ test_metrics:
   Predictivity:
     args: None
   Negative_Predictivity:
-    args: None
-  Recall:
     args: None
   AUROC:
     args: None

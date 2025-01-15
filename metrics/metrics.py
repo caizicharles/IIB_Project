@@ -3,6 +3,7 @@ from sklearn.metrics import f1_score, accuracy_score, confusion_matrix, average_
 
 
 class MetricBase():
+
     def __init__(self, *args, **kwargs) -> None:
         pass
 
@@ -28,10 +29,10 @@ class Accuracy(MetricBase):
         logger.info(f'{self.NAME}: {score:.4f}')
 
 
-class Sensitivity(MetricBase):
+class Recall(MetricBase):
 
     def __init__(self, **kwargs):
-        self.NAME = 'Sensitivity'
+        self.NAME = 'Recall'
 
     def calculate(self, probability, target):
         probability = np.squeeze(probability, axis=-1)
@@ -135,7 +136,7 @@ class F1(MetricBase):
 
 METRICS = {
     'Accuracy': Accuracy,
-    'Sensitivity': Sensitivity,
+    'Recall': Recall,
     'Predictivity': Predictivity,
     'Negative_Predictivity': Negative_Predictivity,
     'Specificity': Specificity,

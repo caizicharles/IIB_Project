@@ -8,9 +8,9 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm
+from imblearn.over_sampling import RandomOverSampler
 import mlflow
 from mlflow.tracking import MlflowClient
-import matplotlib.pyplot as plt
 
 from torch.utils.data import DataLoader
 from dataset.dataset import BaseDataset
@@ -58,7 +58,22 @@ def main(args):
 
     file_lib = load_everything(args.processed_data_path, args.dataset)
 
-    train_dataset = BaseDataset(file_lib['train_data'])
+    train_labels = []
+    for data in file_lib['train_data']:
+        train_labels.append(data['label'])
+    train_labels = np.array(train_labels)
+
+    train_indices = np.arange(len(file_lib['train_data']))
+    train_indices = np.expand_dims(train_indices, axis=-1)
+
+    ros = RandomOverSampler(random_state=args.seed)
+    resampled_train_indices, _ = ros.fit_resample(train_indices, train_labels)
+
+    resampled_train_data = []
+    for idx in resampled_train_indices:
+        resampled_train_data.append(file_lib['train_data'][int(idx)])
+
+    train_dataset = BaseDataset(resampled_train_data)
     val_dataset = BaseDataset(file_lib['val_data'])
     logger.info('Dataset ready')
 
@@ -70,7 +85,7 @@ def main(args):
                             batch_size=args.val_batch_size,
                             shuffle=False,
                             collate_fn=custom_collate_fn)
-    
+
     all_test_loader = []
     loaded_test_dataset = file_lib['test_data']
     for idx in range(args.bootstrap_num):
@@ -82,15 +97,16 @@ def main(args):
         sub_test_dataset = BaseDataset(sub_test_dataset)
 
         sub_test_loader = DataLoader(dataset=sub_test_dataset,
-                             batch_size=args.test_batch_size,
-                             shuffle=False,
-                             collate_fn=custom_collate_fn)
+                                     batch_size=args.test_batch_size,
+                                     shuffle=False,
+                                     collate_fn=custom_collate_fn)
 
         all_test_loader.append(sub_test_loader)
     logger.info('DataLoader ready')
 
     model_configs = args.model['args'] | \
         {'ecg_length': args.ecg_length,
+         'features_num': args.features_num,
          'spectrogram_height': args.spectrogram_height,
          'spectrogram_width': args.spectrogram_width}
 
@@ -107,7 +123,7 @@ def main(args):
 
     global_iter_idx = [0]
 
-    experiment_name = f'Experiments_{args.model["name"]}_{args.task}_Time_Trial'
+    experiment_name = f'Experiments_{args.model["name"]}_{args.task}_oversample'
     mlflow_path = osp.join(args.log_data_path, 'mlflow')
     mlflow_path = 'file:/' + mlflow_path
     mlflow.set_tracking_uri(mlflow_path)
@@ -281,12 +297,13 @@ def single_train(model,
 
     for idx, data in enumerate(data_loader):
         ecg = data['ecg'].to(device)
+        features = data['features'].to(device)
         # spectrogram = data['spectrogram'].to(device)
         labels = data['label'].to(device)
 
         optimizer.zero_grad()
 
-        out = model(ecg=ecg, spectrogram=None)#spectrogram)
+        out = model(ecg=ecg, features=features, spectrogram=None)  #spectrogram)
 
         loss = 0.
         for criterion in criterions:
@@ -343,11 +360,12 @@ def single_validate(model, task, data_loader, epoch_idx, global_iter_idx, criter
 
     for idx, data in enumerate(tqdm(data_loader, desc='Validating')):
         ecg = data['ecg'].to(device)
+        features = data['features'].to(device)
         # spectrogram = data['spectrogram'].to(device)
         labels = data['label'].to(device)
 
         with torch.no_grad():
-            out = model(ecg=ecg, spectrogram=None)#spectrogram)
+            out = model(ecg=ecg, features=features, spectrogram=None)  #spectrogram)
 
             loss = 0.
             for criterion in criterions:
@@ -393,11 +411,12 @@ def single_test(model, task, data_loader, epoch_idx, global_iter_idx, criterions
 
     for idx, data in enumerate(tqdm(data_loader, desc='Testing')):
         ecg = data['ecg'].to(device)
+        features = data['features'].to(device)
         # spectrogram = data['spectrogram'].to(device)
         labels = data['label'].to(device)
 
         with torch.no_grad():
-            out = model(ecg=ecg, spectrogram=None)#spectrogram)
+            out = model(ecg=ecg, features=features, spectrogram=None)  #spectrogram)
 
             loss = 0.
             for criterion in criterions:

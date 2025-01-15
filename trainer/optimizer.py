@@ -1,6 +1,3 @@
 import torch.optim as optim
 
-
-OPTIMIZERS = {
-  'Adam': optim.Adam
-}
+OPTIMIZERS = {'Adam': optim.Adam}

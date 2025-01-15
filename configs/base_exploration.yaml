@@ -2,4 +2,4 @@ seed: 0
 task: exploration
 dataset: Feas2
 
-processed_data_path: C:\Users\caizi\Documents\GitHub\IIB_Project\data\processed
+processed_data_path: C:\Users\ZC\Documents\GitHub\IIB_Project\data\processed

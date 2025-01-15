@@ -21,15 +21,15 @@ def get_args():
         # Base
         'hidden_dim': 16,
         'out_dim': 1,
-        'conv_kernel_size': 4,
-        'conv_stride': 1,
-        'pool_kernel_size': 16,
-        'pool_stride': 1,
-        'padding': 'valid',
-        'freq_encoder_hidden_sizes': [16, 16],
         'joint_head_hidden_sizes': [16, 16],
         'act_fn': 'relu',
-        'dropout': 0.1
+        'dropout': 0.1,
+        # GRU, LSTM, CNN, Base
+        'layer_num': 1,
+        # Transformer
+        'ff_dim': 512,
+        'encoder_depth': 1,
+        'head_num': 1
     }
 
     optimizer_hyp_search_args = {
@@ -48,7 +48,7 @@ def get_args():
             parser.add_argument(f'--{hyp}', type=type(default_val[0]), default=default_val, nargs='+')
         else:
             parser.add_argument(f'--{hyp}', type=type(default_val), default=default_val)
-        
+
     # Config File
     config_parser = argparse.ArgumentParser(description='Algorithm Config', add_help=False)
     config_parser.add_argument('-c', '--config', default=None, type=str, help='YAML config file')
