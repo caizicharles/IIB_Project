@@ -9,6 +9,11 @@ import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import scipy.signal as sg
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
+from matplotlib.lines import Line2D
+from sklearn.manifold import TSNE
 
 from dataset.dataset import BaseDataset
 
@@ -61,6 +66,107 @@ def main(args):
         else:
             negative_dataset.append(data['ecg'])
 
+    N = 50
+    positive_subset = random.sample(positive_dataset, N)
+    negaive_subset = random.sample(negative_dataset, N)
+
+    def compute_psd(ecg, fs=250):
+        """
+        Compute the Power Spectral Density (PSD) of an ECG signal using Welch's method.
+        Returns frequency array and power spectral density array.
+        """
+        freqs, psd = sg.welch(ecg, fs=fs, nperseg=1024)
+        return freqs, psd
+
+
+    def find_max_min_frequency(freqs, psd):
+        """
+        Find the frequencies where the PSD is maximum and minimum.
+        In practice, the 'min' can be trivial (could be zero freq),
+        so interpret accordingly.
+        """
+        max_idx = np.argmax(psd)
+        min_idx = np.argmin(psd)
+
+        max_freq = freqs[max_idx]
+        min_freq = freqs[min_idx]
+        return max_freq, min_freq
+
+    positive_psd = []
+    negative_psd = []
+    positive_max_freq = []
+    positive_min_freq = []
+    negative_max_freq = []
+    negative_min_freq = []
+
+    for idx, (p, n) in enumerate(zip(positive_dataset, negative_dataset)):
+        p_freqs, p_psd = compute_psd(p, fs=200)
+        max_p_freq, min_p_freq = find_max_min_frequency(p_freqs, p_psd)
+
+        positive_psd.append(p_psd)
+        positive_max_freq.append(max_p_freq)
+        positive_min_freq.append(min_p_freq)
+
+        n_freqs, n_psd = compute_psd(n, fs=200)
+        max_n_freq, min_n_freq = find_max_min_frequency(n_freqs, n_psd)
+
+        negative_psd.append(n_psd)
+        negative_max_freq.append(max_n_freq)
+        negative_min_freq.append(min_n_freq)
+
+    positive_psd = np.stack(positive_psd)
+    negative_psd = np.stack(negative_psd)
+    X = np.concatenate((positive_psd, negative_psd), axis=0)
+    Y = np.concatenate((np.zeros(len(positive_psd)), np.ones(len(negative_psd))))
+
+    # tsne = TSNE(n_components=2, perplexity=30, random_state=42)
+    # X_tsne = tsne.fit_transform(X)
+
+    # plt.figure(figsize=(8, 6))
+    # scatter = plt.scatter(X_tsne[:, 0], X_tsne[:, 1], c=Y, cmap="bwr", s=60, alpha=0.8)
+    # plt.xticks(fontsize=12)
+    # plt.yticks(fontsize=12)
+    # plt.legend(*scatter.legend_elements(), title="Label (0=Good Quality, 1=Poor Quality)", fontsize=14)
+    # plt.show()
+    # exit()
+    
+    # pca = PCA(n_components=2)
+    # X_pca = pca.fit_transform(X)
+
+    # plt.figure(figsize=(8, 6))
+    # scatter = plt.scatter(X_pca[:, 0], X_pca[:, 1], c=Y, cmap="coolwarm", s=40, alpha=0.3)
+    # plt.xlabel("PC 1", fontsize=14)
+    # plt.ylabel("PC 2", fontsize=14)
+    # plt.xticks(fontsize=12)
+    # plt.yticks(fontsize=12)
+    # plt.legend(*scatter.legend_elements(), title="Label (0=Good Quality, 1=Poor Quality)", fontsize=14)
+    # plt.show()
+    # plt.clf()
+
+    medianprops = dict(linestyle='-', linewidth=2.5, color='red')
+    meanprops = dict(linestyle='-', linewidth=2.5, color='blue')
+    # median_line = Line2D([0], [0], color='red', label='Median')
+    # mean_line   = Line2D([0], [0], color='blue', label='Mean')
+
+    # plt.figure(figsize=(6, 6))
+    # plt.boxplot([positive_max_freq, negative_max_freq], tick_labels=["Good Quality", "Poor Quality"], showmeans=True, meanline=True, showfliers=False, medianprops=medianprops, meanprops=meanprops)
+    # plt.ylabel("Frequency (Hz)", fontsize=14)
+    # plt.xticks(fontsize=12)
+    # plt.yticks(fontsize=12)
+    # plt.legend(handles=[median_line, mean_line], loc='best')
+    # plt.show()
+    # plt.clf()
+
+    # plt.figure(figsize=(6, 6))
+    # plt.boxplot([positive_min_freq, negative_min_freq], tick_labels=["Good Quality", "Poor Quality"], showmeans=True, meanline=True, showfliers=False, medianprops=medianprops, meanprops=meanprops)
+    # plt.ylabel("Frequency (Hz)", fontsize=14)
+    # plt.xticks(fontsize=12)
+    # plt.yticks(fontsize=12)
+    # plt.legend(handles=[median_line, mean_line], loc='best')
+    # plt.show()
+    # plt.clf()
+    # exit()
+
     # for data in negative_dataset:
     #     fig, axes = plt.subplots(1, 2, figsize=(10, 4))
     #     axes[0].plot(data)
@@ -70,44 +176,53 @@ def main(args):
     #     plt.clf()
     # exit()
 
-
-    N = 200
-    positive_subset = random.sample(positive_dataset, N)
-    negaive_subset = random.sample(negative_dataset, N)
+    
 
     positive_results = []
     negative_results = []
     cross_results = []
 
-    for i, x in enumerate(tqdm(positive_subset)):
-        for j, y in enumerate(positive_subset):
-            if i > j:
-                distance, path = fastdtw(x.flatten(), y.flatten(), dist=lambda x, y: euclidean([x], [y]))
-                positive_results.append(distance)
+    # for i, x in enumerate(tqdm(positive_subset)):
+    #     for j, y in enumerate(positive_subset):
+    #         if i > j:
+    #             distance, path = fastdtw(x.flatten(), y.flatten(), dist=lambda x, y: euclidean([x], [y]))
+    #             positive_results.append(distance)
 
-    for i, x in enumerate(tqdm(negaive_subset)):
-        for j, y in enumerate(negaive_subset):
-            if i > j:
-                distance, path = fastdtw(x.flatten(), y.flatten(), dist=lambda x, y: euclidean([x], [y]))
-                negative_results.append(distance)
+    # for i, x in enumerate(tqdm(negaive_subset)):
+    #     for j, y in enumerate(negaive_subset):
+    #         if i > j:
+    #             distance, path = fastdtw(x.flatten(), y.flatten(), dist=lambda x, y: euclidean([x], [y]))
+    #             negative_results.append(distance)
 
-    for i, x in enumerate(tqdm(positive_subset)):
-        for j, y in enumerate(negaive_subset):
-            if i > j:
-                distance, path = fastdtw(x.flatten(), y.flatten(), dist=lambda x, y: euclidean([x], [y]))
-                cross_results.append(distance)
+    # for i, x in enumerate(tqdm(positive_subset)):
+    #     for j, y in enumerate(negaive_subset):
+    #         if i > j:
+    #             distance, path = fastdtw(x.flatten(), y.flatten(), dist=lambda x, y: euclidean([x], [y]))
+    #             cross_results.append(distance)
 
-    save_with_pickle(positive_results, r'C:\Users\caizi\Documents\GitHub\IIB_Project\logs', 'dtw_positive_label.pickle')
-    save_with_pickle(negative_results, r'C:\Users\caizi\Documents\GitHub\IIB_Project\logs', 'dtw_negative.pickle')
-    save_with_pickle(cross_results, r'C:\Users\caizi\Documents\GitHub\IIB_Project\logs', 'dtw_cross_label.pickle')
+    # save_with_pickle(positive_results, r'C:\Users\ZC\Documents\GitHub\IIB_Project\logs', 'dtw_positive_label.pickle')
+    # save_with_pickle(negative_results, r'C:\Users\ZC\Documents\GitHub\IIB_Project\logs', 'dtw_negative.pickle')
+    # save_with_pickle(cross_results, r'C:\Users\ZC\Documents\GitHub\IIB_Project\logs', 'dtw_cross_label.pickle')
+
+    positive_results = read_pickle_file(r'C:\Users\ZC\Documents\GitHub\IIB_Project\logs', 'dtw_positive_label.pickle')
+    negative_results = read_pickle_file(r'C:\Users\ZC\Documents\GitHub\IIB_Project\logs', 'dtw_negative.pickle')
+    cross_results = read_pickle_file(r'C:\Users\ZC\Documents\GitHub\IIB_Project\logs', 'dtw_cross_label.pickle')
 
     print(np.mean(positive_results), np.mean(negative_results), np.mean(cross_results))
     print(np.std(positive_results), np.std(negative_results), np.std(cross_results))
+
+    plt.figure(figsize=(8, 6))
+    plt.boxplot([positive_results, negative_results, cross_results], tick_labels=["Poor Quality", "Good Quality", 'Cross'], showmeans=True, meanline=True, showfliers=False, medianprops=medianprops, meanprops=meanprops)
+    plt.ylabel("DTW Distance", fontsize=14)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.show()
+    plt.clf()
     exit()
 
     subset = positive_subset + negaive_subset
 
-    results = np.zeros((2*N, 2*N))
+    results = np.zeros((2 * N, 2 * N))
     for i, x in enumerate(tqdm(subset)):
         for j, y in enumerate(subset):
             if i > j:
@@ -127,8 +242,6 @@ def main(args):
     plt.ylabel('Time Series Index')
     plt.show()
     exit()
-
-    
 
 
 if __name__ == '__main__':

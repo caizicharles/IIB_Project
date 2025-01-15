@@ -4,19 +4,11 @@ import argparse
 
 
 def create_project_structure(working_dir=""):
-    datasets = [
-        'Feas2',
-        'Trial'
-    ]
+    datasets = ['Feas2', 'Trial']
 
-    tasks = [
-        'prediction'
-    ]
+    tasks = ['prediction']
 
-    models = [
-        'TimeCNN',
-        'FreqCNN'
-    ]
+    models = ['BaseModel', 'GRU', 'LSTM', 'Transformer']
 
     for dataset in datasets:
         path = osp.join(working_dir, 'data/raw', dataset)
